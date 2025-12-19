@@ -1,6 +1,39 @@
+module "vpc" {
+  source  = "app.terraform.io/acfaria-hashicorp/vpc/aws"
+  version = "1.0.0"
+
+  name = "vpc-demo"
+  cidr = "10.12.0.0/16"
+
+  azs             = ["${var.region}a", "${var.region}b"]
+  private_subnets = ["10.11.1.0/24", "10.11.2.0/24"]
+  public_subnets  = ["10.11.11.0/24", "10.11.12.0/24"]
+
+  create_igw         = true
+  enable_nat_gateway = true
+  single_nat_gateway = true
+
+  tags = {
+    Terraform   = "true"
+    Environment = "demo"
+  }
+}
+
+# Create an EC2 Instance Connect Endpoint
+resource "aws_ec2_instance_connect_endpoint" "default" {
+  subnet_id          = module.vpc.private_subnets[0]
+  security_group_ids = [module.vpc.default_security_group_id]
+}
+
 module "tfe" {
   source  = "hashicorp/terraform-enterprise-hvd/aws"
   version = "0.3.0"
+
+  is_secondary_region               = true
+  rds_global_cluster_id             = "demo-tfe-rds-global-cluster"
+  rds_source_region                 = "us-west-2"
+  rds_replication_source_identifier = "arn:aws:rds:us-west-2:008971679752:cluster:demo-tfe-rds-cluster-us-west-2"
+  rds_kms_key_arn                   = "arn:aws:kms:us-east-2:008971679752:key/mrk-eb58d2059c9b4c55bba0c7047ad93193"
 
   # --- Common --- #
   friendly_name_prefix = var.friendly_name_prefix
