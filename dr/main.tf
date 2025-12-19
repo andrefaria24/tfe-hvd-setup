@@ -3,7 +3,7 @@ module "vpc" {
   version = "1.0.0"
 
   name = "vpc-demo"
-  cidr = "10.12.0.0/16"
+  cidr = "10.11.0.0/16"
 
   azs             = ["${var.region}a", "${var.region}b"]
   private_subnets = ["10.11.1.0/24", "10.11.2.0/24"]
@@ -20,14 +20,17 @@ module "vpc" {
 }
 
 # Create an EC2 Instance Connect Endpoint
-resource "aws_ec2_instance_connect_endpoint" "default" {
-  subnet_id          = module.vpc.private_subnets[0]
-  security_group_ids = [module.vpc.default_security_group_id]
-}
+# resource "aws_ec2_instance_connect_endpoint" "default" {
+#   depends_on = [ module.vpc ]
+
+#   subnet_id          = module.vpc.private_subnets[0]
+#   security_group_ids = [module.vpc.default_security_group_id]
+# }
 
 module "tfe" {
-  source  = "hashicorp/terraform-enterprise-hvd/aws"
-  version = "0.3.0"
+  depends_on = [module.vpc]
+  source     = "hashicorp/terraform-enterprise-hvd/aws"
+  version    = "0.3.0"
 
   is_secondary_region               = true
   rds_global_cluster_id             = "demo-tfe-rds-global-cluster"
