@@ -21,7 +21,7 @@ module "vpc" {
 
 # Create an EC2 Instance Connect Endpoint
 resource "aws_ec2_instance_connect_endpoint" "default" {
-  depends_on = [ module.vpc ]
+  depends_on = [module.vpc]
 
   subnet_id          = module.vpc.private_subnets[0]
   security_group_ids = [module.vpc.default_security_group_id]
@@ -34,9 +34,9 @@ module "tfe" {
 
   is_secondary_region               = true
   rds_global_cluster_id             = "demo-tfe-rds-global-cluster"
-  rds_source_region                 = "us-west-2"
-  rds_replication_source_identifier = "arn:aws:rds:us-west-2:008971679752:cluster:demo-tfe-rds-cluster-us-west-2"
-  rds_kms_key_arn                   = "arn:aws:kms:us-east-2:008971679752:key/mrk-eb58d2059c9b4c55bba0c7047ad93193"
+  rds_source_region                 = "us-west-2"                                                                   # primary region
+  rds_replication_source_identifier = "arn:aws:rds:us-west-2:008971679752:cluster:demo-tfe-rds-cluster-us-west-2"   # primary region RDS cluster ARN
+  rds_kms_key_arn                   = "arn:aws:kms:us-east-2:008971679752:key/mrk-eb58d2059c9b4c55bba0c7047ad93193" # KMS key in DR region replicated from primary
 
   # --- Common --- #
   friendly_name_prefix = var.friendly_name_prefix
