@@ -20,12 +20,12 @@ module "vpc" {
 }
 
 # Create an EC2 Instance Connect Endpoint
-# resource "aws_ec2_instance_connect_endpoint" "default" {
-#   depends_on = [ module.vpc ]
+resource "aws_ec2_instance_connect_endpoint" "default" {
+  depends_on = [ module.vpc ]
 
-#   subnet_id          = module.vpc.private_subnets[0]
-#   security_group_ids = [module.vpc.default_security_group_id]
-# }
+  subnet_id          = module.vpc.private_subnets[0]
+  security_group_ids = [module.vpc.default_security_group_id]
+}
 
 module "tfe" {
   depends_on = [module.vpc]
