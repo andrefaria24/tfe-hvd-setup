@@ -2,14 +2,17 @@
 
 This repository provides Terraform configurations to deploy Terraform Enterprise (TFE) using the HashiCorp Validated Design (HVD) module. It supports single-region (primary only) and multi-region (primary + DR) deployments, with a documented DR failover procedure.
 
-![TFE multi-region architecture](tfe-multiregion.png)
+![TFE multi-region architecture](./docs/tfe-multiregion.png)
 
 ## Repo layout
 
 - `primary/` - Primary region TFE deployment using the HVD module.
 - `dr/` - DR region TFE deployment configured as the Aurora Global Database replica. Includes optional VPC creation for demo purposes.
 - `failover/` - Combined Terraform workspace that updates Cloudflare DNS and triggers Aurora Global Database failover/switchover.
-- `README.md` - This guide.
+
+## Prerequisites
+
+- Required secrets in AWS Secrets Manager (encrypted with KMS) must exist in the primary region before apply; for multi-region deployments, replicate those secrets and the KMS key to the DR region first.
 
 ## Configure TFE for single-region
 
@@ -69,7 +72,7 @@ terraform apply
 
 The DR outputs include `tfe_urls.tfe_lb_dns_name` for DNS failover.
 
-## Failover module
+## Failover operations
 
 Use the `failover/` directory to manage the Cloudflare DNS alias and trigger Aurora Global Database failover/switchover. The module wraps the AWS CLI using a `null_resource` and `local-exec`, so the AWS CLI must be available in the Terraform execution environment with valid AWS credentials.
 
@@ -105,7 +108,7 @@ cd failover
 terraform apply -var "active_region=dr"
 ```
 
-## DR failover: primary to DR
+## Example: DR failover - Primary to DR
 
 Follow the sequence below during a regional failover.
 
@@ -120,7 +123,7 @@ terraform apply -var "asg_instance_count=1"
 
 ```powershell
 cd failover
-terraform apply -var "action=failover-global-cluster" -var "active_region=dr" -var "run_id=2025-01-01T00:00:00Z"
+terraform apply -var "action=failover-global-cluster" -var "active_region=dr"
 ```
 
 You can get the identifiers from `primary/outputs.tf` and `dr/outputs.tf` via `terraform output -json`.
@@ -134,7 +137,7 @@ cd primary
 terraform apply -var "asg_instance_count=0"
 ```
 
-## DR failback: DR to primary
+## Example: DR failback - DR to Primary
 
 Use this sequence once the primary region is healthy again.
 
@@ -149,7 +152,7 @@ terraform apply -var "asg_instance_count=1"
 
 ```powershell
 cd failover
-terraform apply -var "action=switchover-global-cluster" -var "active_region=primary" -var "run_id=2025-01-01T00:00:00Z"
+terraform apply -var "action=switchover-global-cluster" -var "active_region=primary"
 ```
 
 3) The same apply updates Cloudflare DNS back to the primary NLB via `active_region=primary`.
