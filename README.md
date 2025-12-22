@@ -98,3 +98,34 @@ Optionally, scale down the primary ASG after failover:
 cd primary
 terraform apply -var "asg_instance_count=0"
 ```
+
+## DR failback: DR to primary
+
+Use this sequence once the primary region is healthy again.
+
+1) Bring the primary ASG back to 1:
+
+```powershell
+cd primary
+terraform apply -var "asg_instance_count=1"
+```
+
+2) Switch the Aurora Global Database back to primary (AWS CLI example):
+
+```bash
+aws rds switchover-global-cluster \
+  --global-cluster-identifier <rds_global_cluster_id> \
+  --target-db-cluster-identifier <primary_rds_cluster_arn>
+```
+
+3) Update Cloudflare DNS to point back to the primary NLB:
+
+- Use the primary output `tfe_urls.tfe_lb_dns_name` as the record target.
+- Update your Cloudflare record (CNAME or flattened CNAME at apex) to the primary NLB DNS name.
+
+Optionally, scale down the DR ASG after failback:
+
+```powershell
+cd dr
+terraform apply -var "asg_instance_count=0"
+```
