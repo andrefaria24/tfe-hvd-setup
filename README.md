@@ -2,6 +2,8 @@
 
 This repository provides Terraform configurations to deploy Terraform Enterprise (TFE) using the HashiCorp Validated Design (HVD) module. It supports single-region (primary only) and multi-region (primary + DR) deployments, with a documented DR failover procedure.
 
+![TFE multi-region architecture](tfe-multiregion.png)
+
 ## Repo layout
 
 - `primary/` - Primary region TFE deployment using the HVD module.
