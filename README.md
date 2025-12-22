@@ -161,3 +161,7 @@ cd dr
 terraform apply -var "asg_instance_count=0"
 ```
 
+## References
+
+- Terraform HVD module: https://github.com/hashicorp/terraform-aws-terraform-enterprise-hvd
+- Terraform DR guidance: https://www.hashicorp.com/en/blog/disaster-recovery-strategies-with-terraform
