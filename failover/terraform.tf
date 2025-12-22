@@ -5,7 +5,7 @@ terraform {
     organization = "acfaria-hashicorp"
 
     workspaces {
-      name = "tfe-hvd-dns"
+      name = "tfe-hvd-failover"
     }
   }
 

@@ -1,0 +1,10 @@
+cloudflare_api_token = "<my-cloudflare-api-token>"
+cloudflare_zone_id = "<my-cloudflare-zone-id>"
+active_region = "primary"
+action = "failover-global-cluster"
+region = "<aws-region>"
+run_id = "2025-01-01T00:00:00Z"
+
+# Optional overrides (leave null to use remote state)
+global_cluster_identifier = null
+target_db_cluster_identifier = null

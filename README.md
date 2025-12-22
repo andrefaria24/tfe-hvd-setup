@@ -8,6 +8,7 @@ This repository provides Terraform configurations to deploy Terraform Enterprise
 
 - `primary/` - Primary region TFE deployment using the HVD module.
 - `dr/` - DR region TFE deployment configured as the Aurora Global Database replica. Includes optional VPC creation for demo purposes.
+- `failover/` - Combined Terraform workspace that updates Cloudflare DNS and triggers Aurora Global Database failover/switchover.
 - `README.md` - This guide.
 
 ## Configure TFE for single-region
@@ -68,27 +69,29 @@ terraform apply
 
 The DR outputs include `tfe_urls.tfe_lb_dns_name` for DNS failover.
 
-## DNS module (Cloudflare)
+## Failover module
 
-Use the `dns/` directory to manage the Cloudflare DNS alias that points to the active region's NLB.
+Use the `failover/` directory to manage the Cloudflare DNS alias and trigger Aurora Global Database failover/switchover. The module wraps the AWS CLI using a `null_resource` and `local-exec`, so the AWS CLI must be available in the Terraform execution environment with valid AWS credentials.
 
 1) Copy and edit the variables file:
 
 ```powershell
-Copy-Item dns/terraform.tfvars.example dns/terraform.tfvars
+Copy-Item failover/terraform.tfvars.example failover/terraform.tfvars
 ```
 
-2) Update `dns/terraform.tfvars`:
+2) Update `failover/terraform.tfvars`:
 - `cloudflare_api_token`
 - `cloudflare_zone_id`
 - `active_region` (`primary` or `dr`)
+- `action` and `run_id` (optional, used to control the RDS API call and force re-run)
+- `global_cluster_identifier` and `target_db_cluster_identifier` are optional overrides; by default they are pulled from the primary/DR remote state outputs.
 
-3) If you need a different DNS name, update `name` in `dns/main.tf`.
+3) If you need a different DNS name, update `name` in `failover/main.tf`.
 
 4) Apply:
 
 ```powershell
-cd dns
+cd failover
 terraform init
 terraform apply
 ```
@@ -98,7 +101,7 @@ Switching DNS during failover/failback is done by changing `active_region` and r
 Example to fail over DNS to DR:
 
 ```powershell
-cd dns
+cd failover
 terraform apply -var "active_region=dr"
 ```
 
@@ -113,20 +116,16 @@ cd dr
 terraform apply -var "asg_instance_count=1"
 ```
 
-2) Fail over Aurora Global Database to DR (AWS CLI example):
+2) Fail over Aurora Global Database to DR using the `failover/` workspace:
 
-```bash
-aws rds failover-global-cluster \
-  --global-cluster-identifier <rds_global_cluster_id> \
-  --target-db-cluster-identifier <dr_rds_cluster_arn>
+```powershell
+cd failover
+terraform apply -var "action=failover-global-cluster" -var "active_region=dr" -var "run_id=2025-01-01T00:00:00Z"
 ```
 
 You can get the identifiers from `primary/outputs.tf` and `dr/outputs.tf` via `terraform output -json`.
 
-3) Update Cloudflare DNS to point to the DR NLB:
-
-- Use the DR output `tfe_urls.tfe_lb_dns_name` as the new record target.
-- Update your Cloudflare record (CNAME or flattened CNAME at apex) to the DR NLB DNS name.
+3) The same apply updates Cloudflare DNS to point to the DR NLB via `active_region=dr`.
 
 Optionally, scale down the primary ASG after failover:
 
@@ -146,18 +145,14 @@ cd primary
 terraform apply -var "asg_instance_count=1"
 ```
 
-2) Switch the Aurora Global Database back to primary (AWS CLI example):
+2) Switch the Aurora Global Database back to primary using the `failover/` workspace:
 
-```bash
-aws rds switchover-global-cluster \
-  --global-cluster-identifier <rds_global_cluster_id> \
-  --target-db-cluster-identifier <primary_rds_cluster_arn>
+```powershell
+cd failover
+terraform apply -var "action=switchover-global-cluster" -var "active_region=primary" -var "run_id=2025-01-01T00:00:00Z"
 ```
 
-3) Update Cloudflare DNS to point back to the primary NLB:
-
-- Use the primary output `tfe_urls.tfe_lb_dns_name` as the record target.
-- Update your Cloudflare record (CNAME or flattened CNAME at apex) to the primary NLB DNS name.
+3) The same apply updates Cloudflare DNS back to the primary NLB via `active_region=primary`.
 
 Optionally, scale down the DR ASG after failback:
 
@@ -165,3 +160,4 @@ Optionally, scale down the DR ASG after failback:
 cd dr
 terraform apply -var "asg_instance_count=0"
 ```
+
