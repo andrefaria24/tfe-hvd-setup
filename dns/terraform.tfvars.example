@@ -1,0 +1,2 @@
+cloudflare_api_token = "<my-cloudflare-api-token>"
+cloudflare_zone_id = "<my-cloudflare-zone-id>"

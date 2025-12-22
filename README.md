@@ -66,6 +66,40 @@ terraform apply
 
 The DR outputs include `tfe_urls.tfe_lb_dns_name` for DNS failover.
 
+## DNS module (Cloudflare)
+
+Use the `dns/` directory to manage the Cloudflare DNS alias that points to the active region's NLB.
+
+1) Copy and edit the variables file:
+
+```powershell
+Copy-Item dns/terraform.tfvars.example dns/terraform.tfvars
+```
+
+2) Update `dns/terraform.tfvars`:
+- `cloudflare_api_token`
+- `cloudflare_zone_id`
+- `active_region` (`primary` or `dr`)
+
+3) If you need a different DNS name, update `name` in `dns/main.tf`.
+
+4) Apply:
+
+```powershell
+cd dns
+terraform init
+terraform apply
+```
+
+Switching DNS during failover/failback is done by changing `active_region` and re-applying.
+
+Example to fail over DNS to DR:
+
+```powershell
+cd dns
+terraform apply -var "active_region=dr"
+```
+
 ## DR failover: primary to DR
 
 Follow the sequence below during a regional failover.
