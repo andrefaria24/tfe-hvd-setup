@@ -19,7 +19,7 @@ module "vpc" {
   }
 }
 
-# Create an EC2 Instance Connect Endpoint
+# Create an EC2 Instance Connect Endpoint - Uncomment if EC2 Instance Connect for SSH access is needed
 # resource "aws_ec2_instance_connect_endpoint" "default" {
 #   depends_on = [module.vpc]
 
@@ -33,10 +33,10 @@ module "tfe" {
   version    = "0.3.0"
 
   is_secondary_region               = true
-  rds_global_cluster_id             = "demo-tfe-rds-global-cluster"
-  rds_source_region                 = "us-west-2"                                                                   # primary region
-  rds_replication_source_identifier = "arn:aws:rds:us-west-2:008971679752:cluster:demo-tfe-rds-cluster-us-west-2"   # primary region RDS cluster ARN
-  rds_kms_key_arn                   = "arn:aws:kms:us-east-2:008971679752:key/mrk-eb58d2059c9b4c55bba0c7047ad93193" # KMS key in DR region replicated from primary
+  rds_global_cluster_id             = data.terraform_remote_state.primary.outputs.database.rds_global_cluster_id
+  rds_source_region                 = data.terraform_remote_state.primary.outputs.region                            # Primary region
+  rds_replication_source_identifier = data.terraform_remote_state.primary.outputs.database.rds_cluster_arn          # Primary region RDS cluster ARN
+  rds_kms_key_arn                   = data.aws_kms_alias.rds.target_key_arn                                         # KMS key in DR region replicated from primary
 
   # --- Common --- #
   friendly_name_prefix = var.friendly_name_prefix
