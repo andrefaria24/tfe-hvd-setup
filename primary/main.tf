@@ -1,5 +1,4 @@
 module "tfe" {
-  #source = "../modules/terraform-aws-terraform-enterprise-hvd"
   source  = "hashicorp/terraform-enterprise-hvd/aws"
   version = "0.3.0"
 
